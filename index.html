@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GeoAgent: Evaluating VLM Geolocalization Through Embodied Navigation</title>
+<meta name="description" content="GeoAgent is an agentic environment-based benchmark that requires vision-language models to navigate Street View environments to refine their geolocalization through sequential reasoning. Findings of EMNLP 2026.">
+<meta name="theme-color" content="#ffffff">
+<meta name="author" content="Arka Mukherjee, Soham Roy, Kartikeya Trivedi, Shreya Ghosh">
+<meta property="og:title" content="GeoAgent: Evaluating VLM Geolocalization Through Embodied Navigation">
+<meta property="og:description" content="An agentic benchmark requiring VLMs to navigate Street View to refine a geolocalization prediction. Findings of EMNLP 2026.">
+<meta property="og:type" content="article">
+<meta name="citation_title" content="GeoAgent: Evaluating VLM Geolocalization Through Embodied Navigation">
+<meta name="citation_author" content="Mukherjee, Arka">
+<meta name="citation_author" content="Roy, Soham">
+<meta name="citation_author" content="Trivedi, Kartikeya">
+<meta name="citation_author" content="Ghosh, Shreya">
+<meta name="citation_publication_date" content="2026/08/21">
+<meta name="citation_conference_title" content="Findings of the Association for Computational Linguistics: EMNLP 2026">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23ffffff'/%3E%3Crect x='6' y='5' width='20' height='22' fill='none' stroke='%231b1b1b' stroke-width='1.6'/%3E%3Cline x1='10' y1='11' x2='22' y2='11' stroke='%231b1b1b' stroke-width='1.4'/%3E%3Cline x1='10' y1='16' x2='22' y2='16' stroke='%23b0b0b0' stroke-width='1.4'/%3E%3Cline x1='10' y1='21' x2='18' y2='21' stroke='%23b0b0b0' stroke-width='1.4'/%3E%3C/svg%3E">
+<style>
+/* ─────────────────────────  tokens  ───────────────────────── */
+:root{
+  --paper:#ffffff;
+  --ink:#1b1b1b; --ink-2:#454545; --ink-3:#6f6f6f; --ink-4:#8d8d8d;
+  --rule:#dcdcdc; --rule-2:#b4b4b4;
+  --link:#0f4c96; --accent:#8b1a1a;
+  --wash:#f6f6f4; --wash-2:#eeeeec;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,Helvetica,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--serif);
+  font-size:19px;line-height:1.62;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+@media(max-width:640px){body{font-size:17px}}
+
+/* ─── layout: measured text column, figures/tables break out wider ─── */
+.doc{display:grid;
+  grid-template-columns:[full-start] minmax(18px,1fr) [text-start] minmax(0,700px) [text-end] minmax(18px,1fr) [full-end]}
+.doc > *{grid-column:text;min-width:0}
+.doc > .wide{grid-column:full;width:min(1020px,100% - 36px);margin-inline:auto;min-width:0}
+
+/* ─────────────────────────  type  ───────────────────────── */
+h1,h2,h3{font-weight:600;line-height:1.22;letter-spacing:-.012em}
+h2{font-size:clamp(1.24rem,3vw,1.42rem);margin:2.5em 0 .55em;font-variant-numeric:lining-nums}
+h3{font-size:clamp(1.04rem,2.4vw,1.12rem);margin:1.9em 0 .4em;font-variant-numeric:lining-nums}
+h2 .num,h3 .num{color:var(--ink-4);font-weight:400;margin-right:.5em;font-family:var(--sans);font-size:.86em}
+p{margin:0 0 1.05em}
+a{color:var(--link);text-decoration:none;border-bottom:1px solid rgba(15,76,150,.3)}
+a:hover{border-bottom-color:var(--link)}
+strong{font-weight:600}
+code,.tt{font-family:var(--mono);font-size:.8em;background:var(--wash);border:1px solid var(--rule);
+  border-radius:2px;padding:.06em .34em;font-variant-numeric:lining-nums;white-space:nowrap}
+ul{margin:0 0 1.05em 1.25em}
+li{margin-bottom:.34em}
+::selection{background:#fdf0b8}
+
+/* ─────────────────────────  masthead  ───────────────────────── */
+.masthead{padding:clamp(38px,7vw,80px) 0 0;text-align:center}
+.venue{font-family:var(--sans);font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:20px;font-weight:600}
+h1{font-size:clamp(1.5rem,4.4vw,2.4rem);line-height:1.16;letter-spacing:-.018em;
+  max-width:19ch;margin-inline:auto;font-weight:600}
+.authors{margin-top:22px;font-size:clamp(.95rem,2.2vw,1.05rem);color:var(--ink);line-height:1.7}
+.authors span{white-space:nowrap}
+.affil{margin-top:10px;font-size:.84rem;color:var(--ink-3);font-family:var(--mono);letter-spacing:.03em}
+.btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:26px}
+.btn{font-family:var(--sans);font-size:.79rem;font-weight:500;color:var(--ink);
+  background:var(--wash);border:1px solid var(--rule-2);border-radius:4px;
+  padding:8px 15px;display:inline-flex;align-items:center;gap:7px;
+  transition:background .15s,border-color .15s}
+.btn:hover{background:var(--wash-2);border-color:var(--ink-3);color:var(--ink)}
+.btn svg{width:13px;height:13px;flex:none}
+.masthead-rule{border:0;border-top:1px solid var(--ink);margin:clamp(28px,5vw,48px) 0 0}
+
+/* ─────────────────────────  abstract  ───────────────────────── */
+.abstract{margin:30px 0 0;padding:0 clamp(0px,4vw,42px)}
+.abstract h2{font-size:.72rem;font-family:var(--sans);letter-spacing:.15em;text-transform:uppercase;
+  text-align:center;margin:0 0 14px;color:var(--ink-3);font-weight:600}
+.abstract p{font-size:.94rem;line-height:1.62;margin-bottom:.8em}
+.tldr{margin-top:20px;padding:14px 18px;background:var(--wash);border:1px solid var(--rule);border-radius:4px}
+.tldr b{font-family:var(--sans);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);display:block;margin-bottom:7px}
+.tldr p{font-size:.9rem;margin:0}
+.kw{margin-top:16px;text-align:center;font-family:var(--mono);font-size:.7rem;color:var(--ink-3);line-height:2.1}
+.kw span{border:1px solid var(--rule);border-radius:99px;padding:3px 10px;white-space:nowrap}
+
+/* ─────────────────────────  figures & tables  ───────────────────────── */
+figure{margin:2.2em 0}
+figcaption{font-size:.83rem;line-height:1.56;color:var(--ink-2);margin-top:12px;font-variant-numeric:lining-nums}
+figcaption b{font-weight:600;color:var(--ink)}
+.figbox{border:1px solid var(--rule);background:#fff;padding:clamp(10px,1.6vw,16px);min-width:0}
+.figbox img{display:block;width:100%;height:auto}
+.figscroll{overflow-x:auto;min-width:0;max-width:100%;
+  scrollbar-width:thin;scrollbar-color:var(--rule-2) transparent}
+.figscroll img{max-width:none;width:100%;min-width:600px}
+.figscroll::-webkit-scrollbar{height:7px}
+.figscroll::-webkit-scrollbar-thumb{background:var(--rule-2);border-radius:99px}
+.swipe{display:none;align-items:center;gap:6px;margin-top:8px;
+  font-family:var(--mono);font-size:.63rem;color:var(--ink-4)}
+.swipe.on{display:flex}
+
+.tblwrap{overflow-x:auto;min-width:0;-webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;scrollbar-color:var(--rule-2) transparent}
+.tblwrap::-webkit-scrollbar{height:7px}
+.tblwrap::-webkit-scrollbar-thumb{background:var(--rule-2);border-radius:99px}
+table{border-collapse:collapse;width:100%;font-family:var(--sans);font-size:.78rem;
+  font-variant-numeric:tabular-nums lining-nums;line-height:1.45}
+caption{caption-side:top;text-align:left;font-family:var(--serif);font-size:.83rem;
+  color:var(--ink-2);margin-bottom:12px;line-height:1.56}
+caption b{font-weight:600;color:var(--ink)}
+/* booktabs: horizontal rules only, no verticals */
+thead th{border-top:1.5px solid var(--ink);border-bottom:.8px solid var(--ink);
+  font-weight:600;padding:8px 11px;text-align:right;white-space:nowrap;vertical-align:bottom}
+thead th:first-child{text-align:left}
+tbody td{padding:6px 11px;text-align:right;white-space:nowrap;border:0}
+tbody td:first-child{text-align:left;white-space:normal}
+tbody tr:last-child td{border-bottom:1.5px solid var(--ink)}
+tbody tr.grp td{border-top:.7px solid var(--rule-2);padding-top:11px;font-weight:600;
+  font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);text-align:left}
+tbody tr.grp:first-child td{border-top:0}
+tbody tr.base td{color:var(--ink-4)}
+tbody tr.sum td{border-top:.7px solid var(--rule-2);font-weight:600}
+td.best{font-weight:600}
+td.second{text-decoration:underline;text-underline-offset:2.5px;text-decoration-thickness:.5px}
+tbody tr:hover td{background:#fafaf8}
+.acts td:first-child{font-family:var(--mono);font-size:.77rem;white-space:nowrap;font-variant-numeric:lining-nums}
+.acts td:nth-child(2){text-align:left;white-space:normal;font-family:var(--serif);font-size:.88rem}
+
+.eqbox{margin:1.5em 0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:16px}
+.eq{font-family:var(--serif);font-size:1rem;line-height:2;font-variant-numeric:lining-nums;overflow-x:auto}
+.eq i{font-style:italic}
+.eq .fn{font-style:normal}
+.eqn{font-family:var(--serif);color:var(--ink-3);font-size:.9rem;font-variant-numeric:lining-nums}
+
+.box{border:1px solid var(--rule);border-left:2.5px solid var(--ink-3);background:var(--wash);
+  padding:15px 19px;margin:1.7em 0}
+.box .bh{font-family:var(--sans);font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:600;margin-bottom:8px}
+.box p{font-size:.9rem;line-height:1.6;margin-bottom:.7em}
+.box p:last-child{margin-bottom:0}
+.box.warn{border-left-color:var(--accent)}
+.box.warn .bh{color:var(--accent)}
+
+.bib{background:var(--wash);border:1px solid var(--rule);padding:15px 17px;
+  font-family:var(--mono);font-size:.73rem;line-height:1.75;overflow-x:auto;
+  white-space:pre;color:var(--ink-2);font-variant-numeric:lining-nums}
+footer{margin-top:3.4em;border-top:1px solid var(--ink);padding:24px 0 clamp(46px,7vw,84px)}
+footer p{font-size:.8rem;color:var(--ink-3);line-height:1.68;margin-bottom:.7em}
+@media print{body{font-size:11pt}.btns{display:none}}
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <header class="masthead">
+    <div class="venue">Findings of EMNLP 2026</div>
+    <h1>GeoAgent: Evaluating VLM Geolocalization Through Embodied Navigation</h1>
+    <div class="authors">
+      <span>Arka Mukherjee</span>, <span>Soham Roy</span>, <span>Kartikeya Trivedi</span>, <span>Shreya Ghosh</span>
+    </div>
+    <div class="affil">Published 21 August 2026 · CC BY 4.0</div>
+    <div class="btns">
+      <a class="btn" href="https://anonymous.4open.science/r/geoagent-1162" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 10.5 2.5 8 6 5.5M10 5.5 13.5 8 10 10.5"/></svg>
+        Code &amp; environment</a>
+      <a class="btn" href="#results">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 13.5v-5M6.5 13.5v-9M10.5 13.5v-6M14 13.5v-3"/></svg>
+        Results</a>
+      <a class="btn" href="#bibtex">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2.5h8v11l-4-2.6-4 2.6z"/></svg>
+        BibTeX</a>
+      <a class="btn" href="https://research.kartikeya.me/geoagent" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M2.5 8h11M8 2.5c1.6 1.7 2.4 3.6 2.4 5.5S9.6 11.8 8 13.5C6.4 11.8 5.6 9.9 5.6 8s.8-3.8 2.4-5.5z"/></svg>
+        Interactive version</a>
+    </div>
+    <hr class="masthead-rule">
+  </header>
+
+  <section class="abstract">
+    <h2>Abstract</h2>
+    <p>Modern Vision-Language Models (VLMs) perform well above the human baseline in geolocalization tasks. However, most efforts to study AI behavior on the task remain limited to static image-based retrieval, classification, and predictions. We argue that faithful recreation of the task should involve embodied navigation, where a multimodal agent autonomously explores its surroundings to gather observations before submitting a prediction. To this end, we introduce <strong>GeoAgent</strong>, an agentic environment-based benchmark that requires agents to navigate Street View environments to refine their geolocalization through reasoning sequentially. Our analysis shows that modern VLMs struggle to discern regional patterns while succeeding at country- and continent-level predictions. When compared to static image-based baselines, agentic navigation significantly improves accuracy across established metrics. We also note severe bias in a developed/developing region context across frontier model architectures and poor self-improvement capabilities given incorrect priors. Overall, our work establishes the challenges of embodied navigation and geospatial reasoning.</p>
+    <div class="tldr">
+      <b>TL;DR</b>
+      <p>We introduce GeoAgent, a collection of geolocalization data and an embodied navigation environment, showing significant limitations and insights into LLM-based agentic navigation.</p>
+    </div>
+    <div class="kw">
+      <span>embodied agents</span> <span>autonomous agents</span> <span>agent evaluation</span>
+      <span>corpus creation</span> <span>benchmarking</span>
+    </div>
+  </section>
+
+  <section>
+  <h2><span class="num">1</span>Introduction</h2>
+  <p>When a person plays GeoGuessr, the opening frame is rarely the useful one. They spin around hunting for a street sign, walk to the junction to read a shopfront, glance down to check which side of the road the traffic keeps. The identifying detail is somewhere in the scene — it just isn’t in the direction the camera happens to be pointing.</p>
+  <p>Static benchmarks freeze that decision away. A model gets a fixed set of views and must infer from whatever they happen to contain; if the decisive cue lies around the corner, it is unreachable. Even video-based geolocalization keeps the model a passive observer riding somebody else’s camera path. The argument of this work is that such evaluations measure the wrong capability: passive inference tests recognition, whereas the real task is <em>reasoning under uncertainty with the ability to reduce that uncertainty.</em></p>
+  <p>GeoAgent restores the missing half. It is both an open environment and a benchmark, built on real Street View panoramas, in which a model interleaves observation, reasoning, and navigation. Three questions organise the study:</p>
+  <ul>
+    <li><strong>RQ1.</strong> Do VLMs improve geolocalization accuracy through active exploration, and does improvement depend on the correctness of initial hypotheses?</li>
+    <li><strong>RQ2.</strong> Do frontier VLMs exhibit systematic geographic bias between developed and developing regions?</li>
+    <li><strong>RQ3.</strong> How do exploration strategies differ across VLM architectures, and does action efficiency correlate with task performance?</li>
+  </ul>
+  </section>
+
+  <section>
+  <h2><span class="num">2</span>The GeoAgent environment</h2>
+  <p>The environment is a minimal web interface wrapped around Google Street View. The model never touches a mouse: it emits a tool call, the environment moves the camera, and a fresh screenshot returns. Nine actions are available.</p>
+  </section>
+
+  <div class="wide">
+    <figure>
+      <div class="tblwrap">
+        <table class="acts">
+          <caption><b>Table 1:</b> The nine tool calls available to agents exploring the GeoAgent environment. Continuous heading control comes from <span class="tt">ROTATE:&lt;degrees&gt;</span>; the remaining rotations are fixed increments.</caption>
+          <thead><tr><th>Action</th><th style="text-align:left">Description</th></tr></thead>
+          <tbody>
+            <tr><td>ROTATE:&lt;degrees&gt;</td><td>Rotate to a specific heading (0–360°)</td></tr>
+            <tr><td>ROTATE_LEFT</td><td>Rotate 90° left from current view</td></tr>
+            <tr><td>ROTATE_RIGHT</td><td>Rotate 90° right from current view</td></tr>
+            <tr><td>ROTATE_BEHIND</td><td>Rotate 180° to look behind</td></tr>
+            <tr><td>LOOK_UP</td><td>Tilt the camera up by 20°</td></tr>
+            <tr><td>LOOK_DOWN</td><td>Tilt the camera down by 20°</td></tr>
+            <tr><td>MOVE_FORWARD</td><td>Move forward along the road or path</td></tr>
+            <tr><td>RETURN_START</td><td>Return to the starting position</td></tr>
+            <tr><td>GUESS</td><td>Submit the final location guess</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </figure>
+
+    <figure>
+      <div class="figbox"><img src="img/fig1_framework.jpg" alt="The GeoAgent framework: a Street View screenshot feeds a VLM, which emits an Observation and Reasoning, then issues a toolcall from a toolbox of actions back to the environment." width="726" height="774" style="max-width:420px;margin-inline:auto"></div>
+      <figcaption><b>Figure 1:</b> An overview of the GeoAgent framework, with an example VLM (GPT-5 Mini) interacting. Each agent is given a toolbox of nine actions to explore the environment and submit a guess by iteratively refining its geolocalization prediction.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="figbox"><img src="img/interface.jpg" alt="The GeoAgent web interface showing a navigable Street View panorama of a residential street in Inverness, with round counter, score, movement arrow, world mini-map and a MAKE GUESS control." width="1600" height="826"></div>
+      <figcaption><b>Figure 2:</b> The navigable GeoAgent interface. Every sample carries full metadata — continent, country, city, recognisability tier, development status, capture date, source, and both centre and camera coordinates with heading, pitch and field of view.</figcaption>
+    </figure>
+  </div>
+
+  <section>
+  <p>Each turn the model returns the same five JSON fields — <span class="tt">observations</span>, <span class="tt">reasoning</span>, <span class="tt">confidence</span>, <span class="tt">action</span>, and a current <span class="tt">guess</span> — carrying up to five prior observations as context. It is a ReAct-style loop: look, think, move.</p>
+  <p>One design choice matters more than it appears. The model never emits coordinates. It names a place, and the environment resolves that name to latitude and longitude through the Google Geocoding API. This removes an entire failure mode in which a model identifies the right city and then hallucinates wrong numbers for it.</p>
+  <p>Exploration is capped at <strong>eight actions</strong>. That cap is a finding rather than a convenience, and §5 returns to it.</p>
+  </section>
+
+  <section>
+  <h2><span class="num">3</span>Data</h2>
+  <p>A benchmark built from famous landmarks measures how much of the internet a model absorbed. GeoAgent is weighted deliberately against that. 100 cities were selected and stratified into five <em>recognisability tiers</em> by annual visitor numbers — a proxy for how heavily a city features in web-scale training data. Tier 1 is New York and Tokyo; Tier 5 is Inuvik, Siem Reap, Butare, Imphal.</p>
+  <p>The distribution is then inverted relative to a conventional benchmark: Tier 5 supplies <strong>40% of all samples</strong>, Tier 1 just 2.85%. For each city, 100 coordinate pairs were sampled within a two-mile radius; points without navigable Street View coverage were dropped, leaving 1,200 locations. Cities were additionally tagged developed or developing per UNCTAD classifications — 46 and 54 respectively.</p>
+  </section>
+
+  <div class="wide">
+    <figure>
+      <div class="tblwrap">
+        <table>
+          <caption><b>Table 2:</b> Tier-wise composition of the final dataset, with example cities and development status. The hardest tier is deliberately the largest.</caption>
+          <thead><tr><th>Tier</th><th># Cities</th><th>Samples</th><th>Share (%)</th><th style="text-align:left">Example cities</th><th>Developed</th><th>Developing</th></tr></thead>
+          <tbody>
+            <tr><td>Tier 1</td><td>5</td><td>34</td><td>2.85</td><td style="text-align:left">New York, Tokyo</td><td>5</td><td>0</td></tr>
+            <tr><td>Tier 2</td><td>10</td><td>86</td><td>7.14</td><td style="text-align:left">Rome, Mumbai</td><td>5</td><td>5</td></tr>
+            <tr><td>Tier 3</td><td>25</td><td>257</td><td>21.42</td><td style="text-align:left">Bern, Bangalore</td><td>10</td><td>15</td></tr>
+            <tr><td>Tier 4</td><td>25</td><td>343</td><td>28.56</td><td style="text-align:left">Oulu, Mombasa</td><td>12</td><td>13</td></tr>
+            <tr><td>Tier 5</td><td>35</td><td>480</td><td>40.00</td><td style="text-align:left">Inuvik, Siem Reap</td><td>14</td><td>21</td></tr>
+            <tr class="sum"><td>Total</td><td>100</td><td>1,200</td><td>100.00</td><td style="text-align:left">—</td><td>46</td><td>54</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </figure>
+
+    <figure>
+      <div class="figbox figscroll"><img src="img/fig5_tiers.png" alt="Heatmap of average accuracy for six models across five recognisability tiers in four navigation modes. Accuracy falls from Tier 1 to Tier 5 for nearly every model." width="1240" height="430"></div>
+      <figcaption><b>Figure 5:</b> Localization accuracy across geographic tiers. Models struggle markedly with less identifiable locations. GPT-5 Mini holds up best across the ladder; Gemma 3 27B and Claude Haiku 4.5 fall hardest. Values are accuracy averaged over continent, country and city.</figcaption>
+    </figure>
+  </div>
+
+  <section>
+  <h3><span class="num">3.1</span>Evaluation metrics</h3>
+  <p>Localization quality is the great-circle (Haversine) distance between predicted and true coordinates. For prediction (<i>φ</i><sub>1</sub>, <i>λ</i><sub>1</sub>) and ground truth (<i>φ</i><sub>2</sub>, <i>λ</i><sub>2</sub>) in radians:</p>
+  <div class="eqbox">
+    <div class="eq"><i>a</i> = <span class="fn">sin</span><sup>2</sup>(Δ<i>φ</i>/2) + <span class="fn">cos</span> <i>φ</i><sub>1</sub> <span class="fn">cos</span> <i>φ</i><sub>2</sub> <span class="fn">sin</span><sup>2</sup>(Δ<i>λ</i>/2)</div>
+    <div class="eqn">(1)</div>
+  </div>
+  <div class="eqbox">
+    <div class="eq"><i>c</i> = 2 <span class="fn">atan2</span>(√<i>a</i>, √(1 − <i>a</i>)) &nbsp;&nbsp; <i>d</i> = <i>R</i> · <i>c</i></div>
+    <div class="eqn">(2, 3)</div>
+  </div>
+  <p>with <i>R</i> = 6371 km. Both mean and median are reported, because the distribution is heavily skewed by catastrophic failures — a handful of guesses on the wrong continent drag a mean by thousands of kilometres while the median barely moves. Alongside distance, an <em>improvement rate</em> tracks movement from the first guess to action <i>k</i>, and a TF-IDF analysis over the models’ own observation and reasoning text surfaces which vocabulary each model characteristically associates with each country.</p>
+
+  <h3><span class="num">3.2</span>Models and baselines</h3>
+  <p>Six models are evaluated: <strong>Claude Haiku 4.5</strong>, <strong>GPT-5 Mini</strong> and <strong>Gemini 3.0 Flash</strong> (closed); <strong>Gemma 3 27B</strong> and <strong>Llama 4 Scout 109B</strong> (open); and <strong>Geo-R1 7B</strong>, a small model specifically tuned for geospatial reasoning, hosted locally. Temperature is 0.3 where available.</p>
+  <p>They are compared against four controls: a <strong>static 4-view</strong> composite (four headings at the spawn point), a <strong>static 8-view</strong> composite (adding four more after one <span class="tt">MOVE_FORWARD</span>), a <strong>random walk</strong> that isolates how much of the gain comes from reasoned rather than merely additional exploration, and an <strong>unlimited-action</strong> variant. A random guesser and six human annotators anchor both ends.</p>
+  </section>
+
+  <div class="wide">
+    <figure>
+      <div class="figbox"><img src="img/view4.jpg" alt="A 4-view composite: four Street View screenshots at cardinal headings stitched into one strip." width="1280" height="194"></div>
+      <div class="figbox" style="border-top:0"><img src="img/view8.jpg" alt="An 8-view composite: spawn-point views on the top row, post-MOVE_FORWARD views on the bottom row." width="1280" height="388"></div>
+      <figcaption><b>Figure 9:</b> The multiview baselines. Top: four spawn-point screenshots at cardinal headings (4-view). Bottom: the full 8-view composite, with spawn-point views in the first row and post-<span class="tt">MOVE_FORWARD</span> views in the second, each captured at identical heading offsets. Both are passed as a single static image for exactly one inference.</figcaption>
+    </figure>
+  </div>
+
+  <section id="results">
+  <h2><span class="num">4</span>Results</h2>
+  <p>Table 3 is the study’s centrepiece. Read down a column to compare models within a condition; read across conditions to see what embodiment changes.</p>
+  </section>
+
+  <div class="wide">
+    <figure>
+      <div class="tblwrap">
+        <table>
+          <caption><b>Table 3:</b> Performance across all conditions and models. <b>Bold</b> = best, <u>underline</u> = second-best within each condition, among the six models. Accuracies in %. Lower distance and reasoning length are better; higher accuracy is better.</caption>
+          <thead><tr><th>Model</th><th>Mean dist.</th><th>Median dist.</th><th>Reas. len.</th><th>Cont. acc</th><th>Country acc</th><th>City acc</th></tr></thead>
+          <tbody id="t3"></tbody>
+        </table>
+      </div>
+    </figure>
+  </div>
+
+  <section>
+  <h3><span class="num">4.1</span>Does exploration help? <span style="font-weight:400;color:var(--ink-3)">(RQ1)</span></h3>
+  <p>On the headline metric it does, though not uniformly. <strong>Gemini 3.0 Flash</strong> is the clearest case: city accuracy rises from 39.5% on the static 4-view to <strong>50.1%</strong> under agentic navigation — a 26.8% relative gain — and its median error collapses from 118.5 km to <strong>5.0 km</strong>. GPT-5 Mini climbs from 30.3% to 34.5%.</p>
+  <p>But two of six models do not benefit. <strong>Llama 4 Scout</strong> gets <em>worse</em> when handed the controls, its mean error rising from 1,586 km to 1,779 km. <strong>Geo-R1 7B</strong> — the model purpose-built for this task — is the only one whose agentic performance degrades relative to both static baselines. Strong static recognition does not automatically confer good exploration.</p>
+  <p>The random-walk condition isolates the contribution of <em>reasoned</em> navigation. Every general-purpose model beats its own random-walk twin on mean distance: GPT-5 Mini 1,581 → 900 km, Gemma 3 27B 2,205 → 1,689 km, Claude Haiku 4.5 3,260 → 2,181 km. The exploring is doing real work; it is not simply that more pixels arrive.</p>
+
+  <h3><span class="num">4.2</span>Exploration refines; it rarely rescues</h3>
+  <p>The sharpest result in the study appears only once models are allowed to act over time. Split every round by how it ended. For rounds the model eventually got <em>right</em>, additional actions steadily pull the guess toward the truth. For rounds it got <em>wrong</em>, additional actions do almost nothing — the improvement curve flattens, and for some models it reverses.</p>
+  <p>What separates the two is where the model started. In successful rounds the very first guess was already a median of <strong>847 km</strong> from the target (IQR 312–1,892 km); in failed rounds it opened at <strong>2,341 km</strong> (IQR 1,156–4,872 km). A logistic regression predicting final city accuracy from initial distance yields a negative coefficient (<i>β</i> = −0.43, <i>p</i> &lt; 0.001).</p>
+  </section>
+
+  <div class="wide">
+    <figure>
+      <div class="figbox figscroll"><img src="img/fig3_improvement.png" alt="Two line charts of improvement from the initial guess across eight actions. Left, correct city guesses: all models climb steadily. Right, incorrect guesses: all models stay flat, and Gemini 3.0 Flash collapses to about minus 190 percent after action six." width="1240" height="497"></div>
+      <figcaption><b>Figure 3:</b> Aggregated performance improvement per action (out of 8) per model, stratified by final correct and incorrect guesses. Performance generally improves with each extra action, but flattens when the outcome is incorrect. Gemini 3.0 Flash is an outlier, with a collapse on incorrect city guesses beyond five actions.</figcaption>
+    </figure>
+  </div>
+
+  <section>
+  <p>Navigation, in other words, is a refinement instrument rather than a recovery instrument. If a model opens with “Southeast Asia” when the answer is East Africa, eight more screenshots will not save it — and it will frequently spend those screenshots accumulating support for the original error. The paper names this directly: <em>confirmation bias in sequential reasoning</em>, where models struggle to abandon an initial misconception even when presented with contradictory visual evidence.</p>
+
+  <h3><span class="num">4.3</span>A developed/developing gap <span style="font-weight:400;color:var(--ink-3)">(RQ2)</span></h3>
+  <p>Every model broken out this way is roughly <strong>twice as lost</strong> in developing regions. Mean Haversine error runs 50–103% higher, across architectures, open and closed alike: GPT-5 Mini 646 → 1,317 km, Gemma 3 27B 1,308 → 2,537 km, Llama 4 Scout 1,622 → 2,472 km, Claude Haiku 4.5 1,783 → 3,713 km.</p>
+  </section>
+
+  <div class="wide">
+    <figure>
+      <div class="figbox figscroll"><img src="img/fig4_devgap.png" alt="Heatmap of developed minus developing performance deltas for six models across four navigation modes, covering continent, country and city accuracy and mean distance." width="1240" height="450"></div>
+      <figcaption><b>Figure 4:</b> Developed–developing performance delta across all models and navigation modes. All models exhibit a developed-region advantage in mean Haversine distance. Gemini 3.0 Flash shows the largest country-level deltas (&gt;20%) in every mode, suggesting its strong overall performance is disproportionately driven by developed-region familiarity. <em>The accuracy columns and this figure’s caption use inconsistent sign conventions in the source paper; the mean-distance column, where every reported source agrees, is the safest read.</em></figcaption>
+    </figure>
+  </div>
+
+  <section>
+  <p>The obvious objection is that this reflects Street View itself rather than the models. Coverage is famously uneven; perhaps developing-region panoramas are simply older and blurrier. The authors tested it, measuring image age, Google’s internal quality score, and empirical sharpness (variance of the Laplacian) across all 1,200 panoramas.</p>
+  <div class="box">
+    <div class="bh">The data does not explain the gap</div>
+    <p>Developing-region panoramas in this dataset are statistically <strong>newer</strong> (median 2.51 vs 3.09 years, <i>p</i> = 0.034), marginally <strong>higher</strong> in quality score (0.982 vs 0.979, <i>p</i> = 0.030), and indistinguishable in sharpness (1,540 vs 1,499, <i>p</i> = 0.70). No monotonic degradation appears from Tier 1 to Tier 5 in any of the three metrics.</p>
+    <p>Since coordinates without navigable coverage were dropped during construction, every retained sample carries at least the coverage the 8-action budget requires. The gap is therefore attributable to model behaviour, not to data availability or image quality.</p>
+  </div>
+
+  <h3><span class="num">4.4</span>How agents spend a budget <span style="font-weight:400;color:var(--ink-3)">(RQ3)</span></h3>
+  <p>Given identical tools and an identical budget, the models developed markedly different habits — and the habits track the scores. The extreme case is <strong>Llama 4 Scout</strong>, which consumes 7.55 of its 8 actions but spends them almost entirely rotating on the spot: 6.14 rotations against 0.41 forward moves. <strong>Gemini 3.0 Flash</strong> does the opposite, walking rather than turning, and is the best city-level guesser in the study.</p>
+  </section>
+
+  <div class="wide">
+    <figure>
+      <div class="tblwrap">
+        <table>
+          <caption><b>Table 4:</b> Mean exploration behaviour, averaged over developed and developing regions (<i>N</i> = 1,200; three runs each). Llama 4 Scout saturates the action budget but almost exclusively rotates; Gemini 3.0 Flash favours forward movement over rotation.</caption>
+          <thead><tr><th>Model</th><th>Actions</th><th>Screenshots</th><th>Moves</th><th>Rotations</th><th>Move : rotate</th></tr></thead>
+          <tbody>
+            <tr><td>Claude Haiku 4.5</td><td>5.61 ± 0.49</td><td>5.61</td><td>2.79</td><td>1.59</td><td>1.75 : 1</td></tr>
+            <tr><td>Gemini 3.0 Flash</td><td>4.96 ± 0.25</td><td>4.96</td><td>3.57</td><td>0.39</td><td class="best">9.15 : 1</td></tr>
+            <tr><td>Gemma 3 27B</td><td>5.96 ± 0.25</td><td>5.96</td><td>4.20</td><td>0.76</td><td>5.53 : 1</td></tr>
+            <tr><td>Llama 4 Scout</td><td>7.55 ± 0.04</td><td>7.55</td><td>0.41</td><td>6.14</td><td>0.07 : 1</td></tr>
+            <tr><td>GPT-5 Mini</td><td>4.94 ± 0.07</td><td>4.94</td><td>2.42</td><td>1.51</td><td>1.60 : 1</td></tr>
+            <tr class="base"><td>Random baseline</td><td>0.00</td><td>0.00</td><td>0.00</td><td>0.00</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </figure>
+  </div>
+
+  <section>
+  <p>Rotation and movement are not equivalent. Spinning in place resamples a panorama the model has largely already seen; walking forward reaches genuinely new information — a different junction, another shopfront, a new sign. The correlation analysis bears this out: move actions associate positively with every accuracy measure and negatively with distance error, more strongly than raw action count. But all effect sizes are modest (|<i>ρ</i>| &lt; 0.25), which the paper reads as <em>action quality mattering more than action quantity</em>.</p>
+  <p>A quieter pattern sits in the same data. Models explore developed-region locations slightly more than developing ones (5.95 vs 5.65 actions), and when they do fully explore a developing-region scene they rotate rather than walk, at a ratio of 2.1 : 1 against 1.4 : 1 in developed regions.</p>
+
+  <h3><span class="num">4.5</span>The last mile</h3>
+  <p>The most consistent shape in the study is a cliff between country-level and city-level accuracy. Country accuracy runs 52–81%; city accuracy 14–50%. Macro cues — vegetation, climate, driving side, general building stock — narrow a location to a country fairly reliably. What fails is municipal infrastructure, local business signage, regional architectural variation.</p>
+  <p>The TF-IDF analysis over the models’ own reasoning text supplies a mechanism. Models frequently produce exactly the right visual descriptors — “tropical vegetation”, “weathered infrastructure”, “motorcycle traffic” — and then map them to the wrong conclusion. Thai locations are labelled Vietnamese 23% of the time, and Vietnamese locations Thai 18% of the time. The countries with the worst misclassification rates, <strong>Mozambique at 67%</strong> and <strong>Thailand at 54%</strong>, have <em>no country-specific vocabulary in their reasoning chains at all</em> — when distinctive cues are missing, models fall back on generic regional description, and generic description cannot disambiguate.</p>
+  <p>The per-model error signatures are interpretable. Claude Haiku 4.5’s top descriptors for Egypt are Georgian (<span class="tt">orthodox</span>, <span class="tt">caucasus</span>, <span class="tt">tbilisi</span>) — a systematic Egypt/Georgia confusion invisible in aggregate accuracy. Gemma 3 27B describes Chinese scenes with Japanese vocabulary, a Japan-prior leak across East Asian imagery. Llama 4 Scout’s characteristic terms for China include <span class="tt">google logo</span>: it is reading Street View’s own interface furniture rather than the scene inside it. Because vocabulary overlaps only 36.6–52.7% between agentic and static conditions, these are model habits rather than artefacts of the environment.</p>
+  </section>
+
+  <section>
+  <h2><span class="num">5</span>The action budget is the finding</h2>
+  <p>An eight-action cap looks like a pragmatic convenience, so the authors tested removing it: three models re-run with unlimited actions and an explicit self-reflection prompt injected at step six.</p>
+  <p>Performance generally got <em>worse</em>. GPT-5 Mini more than doubled its actions per round (4.94 → 10.13) while its mean error rose from 900 to 1,218 km. Llama 4 Scout tripled to <strong>22.99 actions</strong> and its error worsened by 76%. Only Gemma 3 improved, and it did so while taking slightly <em>fewer</em> actions — suggesting the gain came from the reflection prompt, not the extra wandering. Reasoning length roughly doubled or tripled across all three, while continent and city accuracies moved by only a few points.</p>
+  <p>Cost moved opposite to accuracy. Per-round spend rose about <strong>30×</strong> for GPT-5 Mini and <strong>56×</strong> for Llama 4 Scout under the unlimited setting. The cap preserves the benchmark’s diagnostic signal at roughly an order of magnitude lower API spend, and disadvantages none of the model families.</p>
+  <p>The same anti-correlation appears across the study as a whole. Claude Haiku 4.5 was the most expensive model evaluated at <strong>$187.60</strong> total, and the worst-performing closed model on every accuracy metric. Gemma 3 27B completed the study for <strong>$2.33</strong> — an 83× reduction — and beat it on city accuracy under agentic navigation.</p>
+  </section>
+
+  <section>
+  <h2><span class="num">6</span>The human baseline</h2>
+  <p>Six undergraduate volunteers — beginner to intermediate GeoGuessr players, required to think aloud into a speech-to-text tool so their reasoning chains could be recorded — played the same rounds. Their median error was <strong>996 km</strong> and their city accuracy <strong>7.1%</strong>. Every model in the study, in nearly every condition, beat them. Even the strongest single annotator (1,720 km mean error, 46.8% country accuracy, 4.3% city accuracy) is decisively behind GPT-5 Mini and Gemini 3.0 Flash.</p>
+  </section>
+
+  <div class="wide">
+    <figure>
+      <div class="figbox"><img src="img/human_portal.jpg" alt="The human annotation portal: the same Street View environment the agents see, with an added plaintext field and speech-to-text control for recording the player's reasoning." width="1300" height="642"></div>
+      <figcaption><b>Figure 12:</b> The portal used to collect human baselines. It is broadly the same environment the agents navigate, with an added field for observation chains in plaintext and via speech-to-text — participants were asked to think out loud so that human geolocalization reasoning could be recorded alongside the guess.</figcaption>
+    </figure>
+  </div>
+
+  <section>
+  <p>Two caveats keep this honest. No expert-level players were recruited, so the supported claim is that frontier models exceed <em>non-expert</em> human performance; skilled GeoGuessr players are formidable and the comparison remains open. And between-annotator variance was large — continent accuracy ranged from 0.20 to 0.71 — with the weakest annotators evaluated on too few rounds to stand alone.</p>
+  <p>Notably, the country-to-city collapse shows up in the humans too: 46.8% → 4.3% for the strongest annotator. That asymmetry looks like a property of the task itself rather than a deficiency of models.</p>
+  </section>
+
+  <section>
+  <h2><span class="num">7</span>Limitations and ethics</h2>
+  <p><strong>It is not a map of the world.</strong> 1,200 locations across 100 hand-chosen cities is an evaluation harness, not geographic coverage. Because the tier weighting deliberately over-represents obscure cities, absolute accuracies should never be read as real-world performance estimates; results should always be reported stratified by tier and development level.</p>
+  <p><strong>The action space is a simplification.</strong> Nine actions mirror Street View’s capture topology but exclude zoom, multi-step planning, and cross-modal lookup — all things a human player uses freely. Headline numbers use a fixed budget; a per-model adaptive budget could surface exploration regimes this design cannot see.</p>
+  <div class="box warn">
+    <div class="bh">On misuse</div>
+    <p>GeoAgent operates only on publicly available Google Street View imagery, which blurs privately identifying information such as licence plates and faces, and processes no user-generated content. The authors nonetheless acknowledge that advances in agentic geolocalization could lower the barrier for misuse — surveillance, unauthorised location inference from personal media — and encourage explicit safeguards such as restricted API access and geofencing, alongside more geographically balanced data collection.</p>
+    <p>The dataset should not be used to train or fine-tune models, to power production geolocation services, or in any application that could identify or surveil individuals incidentally captured in Street View imagery. Metadata is released; raw imagery is not redistributed.</p>
+  </div>
+  </section>
+
+  <section>
+  <h2><span class="num">8</span>Summary</h2>
+  <ul>
+    <li><strong>Embodiment changes what you can measure.</strong> Letting a model act reveals confirmation bias, exploration style and self-correction failure — none of which a static benchmark can see.</li>
+    <li><strong>Exploration refines, it does not rescue.</strong> Gains concentrate where the opening hypothesis was already close; bad first guesses are rarely recovered and are often reinforced.</li>
+    <li><strong>The developed/developing gap is behavioural.</strong> Roughly 2× worse error in developing regions, with an image-quality audit ruling out the obvious data explanation.</li>
+    <li><strong>More budget is not more intelligence.</strong> Unlimited actions cost up to 56× more per round and made two of three models less accurate.</li>
+    <li><strong>Static skill does not transfer.</strong> The model purpose-built for geolocalization was the only one to get worse when finally allowed to navigate.</li>
+  </ul>
+  </section>
+
+  <section id="bibtex">
+  <h2><span class="num">—</span>Citation</h2>
+  <div class="bib">@inproceedings{mukherjee2026geoagent,
+  title     = {GeoAgent: Evaluating VLM Geolocalization
+               Through Embodied Navigation},
+  author    = {Mukherjee, Arka and Roy, Soham and
+               Trivedi, Kartikeya and Ghosh, Shreya},
+  booktitle = {Findings of the Association for Computational
+               Linguistics: EMNLP 2026},
+  year      = {2026},
+  url       = {https://anonymous.4open.science/r/geoagent-1162}
+}</div>
+  </section>
+
+  <footer>
+    <p><strong>GeoAgent: Evaluating VLM Geolocalization Through Embodied Navigation.</strong> Arka Mukherjee, Soham Roy, Kartikeya Trivedi, Shreya Ghosh. Findings of EMNLP 2026, published 21 August 2026, licensed <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.</p>
+    <p>Figures are reproduced from the paper under that licence. Street View imagery © Google. Code and environment: <a href="https://anonymous.4open.science/r/geoagent-1162" target="_blank" rel="noopener noreferrer">anonymous.4open.science/r/geoagent-1162</a>. An interactive companion to this page is at <a href="https://research.kartikeya.me/geoagent" target="_blank" rel="noopener noreferrer">research.kartikeya.me/geoagent</a>.</p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  /* Table 3 is generated from one data object, so the values and the
+     best / second-best marks can never drift apart. */
+  var NAME = { claude:"Claude Haiku 4.5", gpt:"GPT-5 Mini", gemini:"Gemini 3.0 Flash",
+               gemma:"Gemma 3 27B", llama:"Llama 4 Scout", geor1:"Geo-R1 7B" };
+  var ORDER = ["claude","gpt","gemini","gemma","llama","geor1"];
+  var LOWER = [true,true,true,false,false,false];
+  var COND = [
+    ["Static 4-view", {
+      claude:[2951.7,1114.6,329.9,64.4,43.5,9.4], gpt:[776.7,232.5,205.9,90.3,80.4,30.3],
+      gemini:[1446.8,118.5,232.3,70.0,65.6,39.5], gemma:[2669.2,754.7,198.0,49.5,37.1,12.7],
+      llama:[1586.1,458.0,200.4,72.7,59.9,20.8], geor1:[2350.1,521.0,226.4,74.9,62.8,17.5]},
+      [9958.2,9951.2]],
+    ["Static 8-view", {
+      claude:[2603.2,944.7,338.6,68.7,47.9,9.9], gpt:[740.1,205.7,200.5,91.5,82.9,32.3],
+      gemini:[1247.3,84.1,231.9,71.9,67.3,41.5], gemma:[3092.0,888.7,205.1,44.3,33.4,12.0],
+      llama:[1592.6,453.5,203.2,75.0,61.5,20.3], geor1:[2154.4,439.8,226.6,77.4,67.0,18.7]},
+      [9992.1,9951.7]],
+    ["Random walk", {
+      claude:[3260.4,1031.9,710.2,49.7,43.2,11.7], gpt:[1581.3,283.8,239.5,73.0,71.2,30.0],
+      gemini:[1565.1,184.5,337.8,62.2,64.7,35.1], gemma:[2205.3,434.9,395.7,49.5,48.1,20.2],
+      llama:[2782.5,701.5,340.3,52.9,44.9,16.2], geor1:[2404.5,521.0,229.9,56.9,53.8,9.2]},
+      [7956.1,6741.7]],
+    ["Agentic navigation — limited (8 actions)", {
+      claude:[2181.4,688.3,424.2,68.4,52.4,14.3], gpt:[900.0,182.3,182.8,88.6,81.2,34.5],
+      gemini:[1099.4,5.0,283.5,73.8,69.8,50.1], gemma:[1689.3,401.5,268.5,63.9,54.0,19.3],
+      llama:[1779.5,579.7,200.4,70.1,58.4,14.7], geor1:[2549.0,575.8,224.1,61.8,54.6,17.9]},
+      [10089.2,10210.3]],
+    ["Agentic navigation — unlimited", {
+      claude:[3162.0,972.8,978.9,67.4,52.1,12.8], gpt:[1136.1,182.0,564.9,86.9,80.2,35.8],
+      gemini:[1229.2,149.8,517.7,84.5,76.5,39.5], gemma:[1610.8,441.0,595.8,73.4,59.3,20.1],
+      llama:[3136.5,680.7,523.6,69.3,59.3,20.7], geor1:[2846.6,559.0,352.7,66.7,63.1,19.1]},
+      [10089.2,10210.3]]
+  ];
+  function num(v, i) {
+    return i < 2 ? Math.round(v).toLocaleString() : (i === 2 ? Math.round(v) : v.toFixed(1));
+  }
+  var h = '<tr class="grp"><td colspan="7">Human baseline</td></tr>' +
+    '<tr class="base"><td>Human annotators</td><td>2,754</td><td>996</td><td>—</td>' +
+    '<td>57.6</td><td>36.6</td><td>7.1</td></tr>';
+  COND.forEach(function (c) {
+    var name = c[0], d = c[1], rnd = c[2];
+    h += '<tr class="grp"><td colspan="7">' + name + '</td></tr>';
+    var rank = [];
+    for (var i = 0; i < 6; i++) {
+      var v = ORDER.map(function (k) { return { k: k, v: d[k][i] }; });
+      v.sort(function (a, b) { return LOWER[i] ? a.v - b.v : b.v - a.v; });
+      rank[i] = { best: v[0].k, second: v[1].k };
+    }
+    ORDER.forEach(function (k) {
+      h += "<tr><td>" + NAME[k] + "</td>";
+      for (var i = 0; i < 6; i++) {
+        var cls = rank[i].best === k ? ' class="best"' : (rank[i].second === k ? ' class="second"' : "");
+        h += "<td" + cls + ">" + num(d[k][i], i) + "</td>";
+      }
+      h += "</tr>";
+    });
+    h += '<tr class="base"><td>Random baseline</td><td>' + Math.round(rnd[0]).toLocaleString() +
+         "</td><td>" + Math.round(rnd[1]).toLocaleString() +
+         "</td><td>—</td><td>0.0</td><td>0.0</td><td>0.0</td></tr>";
+  });
+  var tb = document.getElementById("t3");
+  if (tb) tb.innerHTML = h;
+
+  /* swipe affordance, only where content genuinely overflows */
+  function hints() {
+    document.querySelectorAll(".figscroll, .tblwrap").forEach(function (box) {
+      var over = box.scrollWidth - box.clientWidth > 8;
+      var n = box.nextElementSibling;
+      if (!n || !n.classList.contains("swipe")) {
+        if (!over) return;
+        n = document.createElement("div");
+        n.className = "swipe";
+        n.textContent = "› swipe to see the full width";
+        box.parentNode.insertBefore(n, box.nextSibling);
+        box.addEventListener("scroll", function () {
+          if (box.scrollLeft > 12) n.classList.remove("on");
+        }, { passive: true });
+      }
+      n.classList.toggle("on", over && box.scrollLeft <= 12);
+    });
+  }
+  addEventListener("resize", hints, { passive: true });
+  addEventListener("load", hints);
+  hints();
+})();
+</script>
+</body>
+</html>
