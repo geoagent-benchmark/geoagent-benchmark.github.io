@@ -7,7 +7,6 @@ Arka Mukherjee, Soham Roy, Kartikeya Trivedi, Shreya Ghosh · CC BY 4.0
 
 - Live: https://geoagent-benchmark.github.io/
 - Code & environment: https://anonymous.4open.science/r/geoagent-1162
-- Interactive companion: https://research.kartikeya.me/geoagent
 
 ## Layout
 
