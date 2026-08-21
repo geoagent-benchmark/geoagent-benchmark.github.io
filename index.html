@@ -61,7 +61,11 @@ h3{font-size:1.02rem;font-weight:600;letter-spacing:-.01em;margin:1.6em 0 .5em}
   color:var(--ink-2);line-height:1.4;max-width:34ch;margin-inline:auto;letter-spacing:-.01em}
 .authors{margin-top:22px;font-size:clamp(.95rem,2vw,1.05rem);line-height:1.9}
 .authors a,.authors span.au{font-weight:500;color:var(--ink);white-space:nowrap}
-.venue{margin-top:12px;font-size:.92rem;font-weight:600;color:var(--brand)}
+.authors sup{font-size:.7em;font-weight:400;color:var(--ink-3);margin-left:1px}
+.affils{margin-top:8px;font-size:.85rem;color:var(--ink-3);line-height:1.7;
+  display:flex;gap:6px 20px;justify-content:center;flex-wrap:wrap}
+.affils sup{font-size:.78em;margin-right:2px}
+.venue{margin-top:14px;font-size:.92rem;font-weight:600;color:var(--brand)}
 .btns{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:24px}
 .btn{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:#fff;
   border-radius:999px;padding:9px 19px;font-size:.88rem;font-weight:500;
@@ -147,10 +151,14 @@ footer p{font-size:.82rem;color:var(--ink-4);margin:0}
     </div>
     <p class="sub">Evaluating VLM Geolocalization Through Embodied Navigation</p>
     <div class="authors">
-      <span class="au">Arka Mukherjee</span>,
-      <span class="au">Soham Roy</span>,
-      <span class="au">Kartikeya Trivedi</span>,
-      <span class="au">Shreya Ghosh</span>
+      <span class="au">Arka Mukherjee<sup>1</sup></span>,
+      <span class="au">Soham Roy<sup>1</sup></span>,
+      <span class="au">Kartikeya Trivedi<sup>1</sup></span>,
+      <span class="au">Shreya Ghosh<sup>2</sup></span>
+    </div>
+    <div class="affils">
+      <span><sup>1</sup>Kalinga Institute of Industrial Technology (KIIT)</span>
+      <span><sup>2</sup>Indian Institute of Technology (IIT) Bhubaneswar</span>
     </div>
     <div class="venue">EMNLP 2026 (Findings)</div>
     <div class="btns">
